@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRHS Falcon Time Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Dark Theme Styling */
+        html {
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background-color: #0d1117; 
+            color: #c9d1d9; 
+            min-height: 100vh;
+        }
+        .container-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        /* Custom focus ring color */
+        .focus-indigo:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+            outline: none;
+        }
+
+        /* Modal specific styling */
+        .modal {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-indigo': '#6366f1',
+                        'accent-teal': '#14b8a6', 
+                        'dark-bg': '#0d1117',
+                        'card-bg': '#161b22',
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex flex-col items-center justify-start p-4 sm:p-8">
+
+    <!-- Header and Back Button -->
+    <header class="w-full max-w-5xl mb-6">
+        <!-- Back Button -->
+        <a href="index.html" class="inline-flex items-center text-primary-indigo hover:text-indigo-400 transition mb-6 rounded-lg focus-indigo p-2 -ml-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Home
+        </a>
+
+        <!-- Title -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+            SRHS Falcon Time Tracker
+        </h1>
+        <p class="text-md text-gray-400" id="current-time-display">
+            Loading...
+        </p>
+    </header>
+
+    <main class="w-full max-w-5xl flex-grow space-y-8">
+        
+        <!-- Current Period Progress Card - Click Target for Tester Mode -->
+        <section class="container-card p-6 rounded-xl space-y-4">
+            <h2 class="text-2xl font-bold text-white" id="current-period-name">
+                School Day Status
+            </h2>
+            <p id="period-info" class="text-gray-400">
+                Determining current period...
+            </p>
+
+            <!-- Progress Bar Area: Click 5 times to activate tester -->
+            <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-3 cursor-pointer relative group">
+                <div id="progress-bar" class="bg-accent-teal h-3 rounded-full transition-all duration-100 ease-linear" style="width: 0%"></div>
+                <div id="tester-hint" class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-xs text-yellow-500 bg-card-bg px-2 py-0.5 rounded-md opacity-0 transition-opacity duration-300 pointer-events-none">
+                    Tester Mode Active!
+                </div>
+            </div>
+
+            <p id="time-remaining" class="text-lg font-semibold text-accent-teal text-right">
+                --:-- remaining
+            </p>
+        </section>
+
+        <!-- Today's Full Schedule Card -->
+        <section class="container-card p-6 rounded-xl">
+            <h2 class="text-xl font-bold text-white mb-4">
+                Today's Schedule (<span id="schedule-type-display" class="text-primary-indigo">--</span>)
+            </h2>
+            <div id="schedule-list" class="space-y-2">
+                <!-- Schedule items will be populated here -->
+                <p class="text-gray-500 italic">No schedule available.</p>
+            </div>
+        </section>
+
+        <!-- Quick Calendar Card (Optional Request) -->
+        <section class="container-card p-6 rounded-xl">
+            <h2 class="text-xl font-bold text-white mb-4">
+                Upcoming Week Schedule Glance
+            </h2>
+            <div id="calendar-glance" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+                <!-- Calendar tiles will be populated here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Tester Mode -->
+    <div id="tester-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-xl shadow-2xl space-y-4">
+            <h3 class="text-xl font-bold text-white">Tester Mode: Set Custom Time</h3>
+            <p class="text-gray-400">Input a date and time to simulate the schedule view for that moment.</p>
+            
+            <form id="tester-form" class="space-y-4">
+                <div>
+                    <label for="test-date" class="block text-sm font-medium text-gray-300 mb-1">Date</label>
+                    <input type="date" id="test-date" required class="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus-indigo border border-gray-600">
+                </div>
+                <div>
+                    <label for="test-time" class="block text-sm font-medium text-gray-300 mb-1">Time</label>
+                    <input type="time" id="test-time" required step="1" class="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus-indigo border border-gray-600">
+                </div>
+                <div class="flex justify-between space-x-2 pt-2">
+                    <button type="button" id="reset-button" class="w-1/2 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition focus-indigo">
+                        Reset to Current Time
+                    </button>
+                    <button type="submit" class="w-1/2 py-2 px-4 bg-primary-indigo hover:bg-indigo-700 text-white font-semibold rounded-lg transition focus-indigo">
+                        Apply Simulation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-gray-600 text-sm w-full max-w-5xl">
+        <p>&copy; 2025 Falcon Time Tracker. Schedule based on 2025-2026 data.</p>
+        <p>&copy; 2025 x-Lunar. Built for GitHub Pages.</p>
+        <p class="mt-1">Source available on <a href="https://github.com/x-Lunar/x-Lunar" class="text-primary-indigo hover:text-indigo-400 transition">GitHub</a>.</p>
+    </footer>
+
+    <script>
+        // --- Global State for Tester Mode ---
+        let testerModeActive = false;
+        let customNow = null; // Stores the custom Date object
+        let clickCount = 0;
+        let clickTimer = null;
+        const requiredClicks = 5;
+        const clickTimeout = 500; // milliseconds
+
+        // --- Schedule Data ---
+        // Times are in 24-hour format (HH:MM)
+        const SCHEDULES = {
+            'MONDAY': {
+                name: "Early Out Monday",
+                events: [
+                    { name: "Period 1", start: "08:35", end: "09:21" },
+                    { name: "Passing", start: "09:21", end: "09:29", type: 'break' },
+                    { name: "Period 2", start: "09:29", end: "10:15" },
+                    { name: "Passing", start: "10:15", end: "10:23", type: 'break' },
+                    { name: "Period 3", start: "10:23", end: "11:09" },
+                    { name: "Passing", start: "11:09", end: "11:17", type: 'break' },
+                    { name: "Period 4", start: "11:17", end: "12:03" },
+                    { name: "Passing", start: "12:03", end: "12:11", type: 'break' },
+                    { name: "Lunch", start: "12:11", end: "12:41", type: 'lunch' },
+                    { name: "Passing", start: "12:41", end: "12:49", type: 'break' },
+                    { name: "Period 5", start: "12:49", end: "13:35" },
+                    { name: "Passing", start: "13:35", end: "13:43", type: 'break' },
+                    { name: "Period 6", start: "13:43", end: "14:29" },
+                    { name: "Passing", start: "14:29", end: "14:37", type: 'break' },
+                    { name: "Period 7", start: "14:37", end: "15:23", optional: true }
+                ]
+            },
+            'TUE_FRI': {
+                name: "Regular (55 min) Day",
+                events: [
+                    { name: "Period 1", start: "08:35", end: "09:30" },
+                    { name: "Passing", start: "09:30", end: "09:38", type: 'break' },
+                    { name: "Period 2", start: "09:38", end: "10:33" },
+                    { name: "Passing", start: "10:33", end: "10:41", type: 'break' },
+                    { name: "Period 3", start: "10:41", end: "11:36" },
+                    { name: "Passing", start: "11:36", end: "11:44", type: 'break' },
+                    { name: "Period 4", start: "11:44", end: "12:39" },
+                    { name: "Passing", start: "12:39", end: "12:47", type: 'break' },
+                    { name: "Lunch", start: "12:47", end: "13:17", type: 'lunch' },
+                    { name: "Passing", start: "13:17", end: "13:25", type: 'break' },
+                    { name: "Period 5", start: "13:25", end: "14:20" },
+                    { name: "Passing", start: "14:20", end: "14:28", type: 'break' },
+                    { name: "Period 6", start: "14:28", end: "15:23" },
+                    { name: "Passing", start: "15:23", end: "15:31", type: 'break' },
+                    { name: "Period 7", start: "15:31", end: "16:26", optional: true }
+                ]
+            },
+            'WEDNESDAY_BLOCK': {
+                name: "Block Day (Periods 1, 3, 5)",
+                events: [
+                    { name: "Period 1", start: "08:35", end: "10:23" },
+                    { name: "Passing", start: "10:23", end: "10:31", type: 'break' },
+                    { name: "Advisory", start: "10:31", end: "10:53" },
+                    { name: "Passing", start: "10:53", end: "11:01", type: 'break' },
+                    { name: "Period 3", start: "11:01", end: "12:49" },
+                    { name: "Passing", start: "12:49", end: "12:57", type: 'break' },
+                    { name: "Lunch", start: "12:57", end: "13:27", type: 'lunch' },
+                    { name: "Passing", start: "13:27", end: "13:35", type: 'break' },
+                    { name: "Period 5", start: "13:35", end: "15:23" },
+                    { name: "Passing", start: "15:23", end: "15:31", type: 'break' },
+                    { name: "Period 7", start: "15:31", end: "16:26", optional: true }
+                ]
+            },
+            'THURSDAY_BLOCK': {
+                name: "Block Day (Periods 2, 4, 6)",
+                events: [
+                    { name: "Period 2", start: "08:35", end: "10:23" },
+                    { name: "Passing", start: "10:23", end: "10:31", type: 'break' },
+                    { name: "Advisory", start: "10:31", end: "10:53" },
+                    { name: "Passing", start: "10:53", end: "11:01", type: 'break' },
+                    { name: "Period 4", start: "11:01", end: "12:49" },
+                    { name: "Passing", start: "12:49", end: "12:57", type: 'break' },
+                    { name: "Lunch", start: "12:57", end: "13:27", type: 'lunch' },
+                    { name: "Passing", start: "13:27", end: "13:35", type: 'break' },
+                    { name: "Period 6", start: "13:35", end: "15:23" },
+                    { name: "Passing", start: "15:23", end: "15:31", type: 'break' },
+                    { name: "Period 7", start: "15:31", end: "16:26", optional: true }
+                ]
+            },
+            'FIRST_DAY': {
+                name: "First Day Schedule (Mon, Aug. 11)",
+                events: [
+                    { name: "Rally", start: "08:35", end: "09:05" },
+                    { name: "Passing", start: "09:05", end: "09:13", type: 'break' },
+                    { name: "Period 1", start: "09:13", end: "09:53" },
+                    { name: "Passing", start: "09:53", end: "10:01", type: 'break' },
+                    { name: "Period 2", start: "10:01", end: "10:41" },
+                    { name: "Passing", start: "10:41", end: "10:49", type: 'break' },
+                    { name: "Period 3", start: "10:49", end: "11:29" },
+                    { name: "Passing", start: "11:29", end: "11:37", type: 'break' },
+                    { name: "Period 4", start: "11:37", end: "12:17" },
+                    { name: "Passing", start: "12:17", end: "12:25", type: 'break' },
+                    { name: "Lunch", start: "12:25", end: "12:55", type: 'lunch' },
+                    { name: "Passing", start: "12:55", end: "13:03", type: 'break' },
+                    { name: "Period 5", start: "13:03", end: "13:43" },
+                    { name: "Passing", start: "13:43", end: "13:51", type: 'break' },
+                    { name: "Period 6", start: "13:51", end: "14:29" },
+                    { name: "Passing", start: "14:29", end: "14:37", type: 'break' },
+                    { name: "Period 7", start: "14:37", end: "15:17", optional: true }
+                ]
+            }
+        };
+
+        // --- Helper Functions ---
+
+        // Converts HH:MM string to total minutes from midnight
+        function timeToMinutes(timeString) {
+            const [hours, minutes, seconds = 0] = timeString.split(':').map(Number);
+            return hours * 60 + minutes + seconds / 60;
+        }
+
+        // Formats minutes (e.g., 95.5) into "1 hour, 35 minutes, 30 seconds"
+        function formatMinutesToDuration(totalMinutes) {
+            if (totalMinutes < 0) return "0 seconds";
+            
+            const totalSeconds = Math.round(totalMinutes * 60);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+
+            let parts = [];
+            if (h > 0) parts.push(`${h} hour${h > 1 ? 's' : ''}`);
+            if (m > 0) parts.push(`${m} minute${m > 1 ? 's' : ''}`);
+            // Only show seconds if there are no hours or minutes, or if seconds > 0
+            if (s > 0 || (h === 0 && m === 0)) parts.push(`${s} second${s !== 1 ? 's' : ''}`);
+            
+            return parts.join(', ');
+        }
+        
+        // --- Core Logic: Determine Schedule ---
+
+        function getScheduleType(date) {
+            const dayOfWeek = date.getDay(); // 0 (Sun) - 6 (Sat)
+            const month = date.getMonth(); // 0 (Jan) - 11 (Dec)
+            const day = date.getDate();
+            const year = date.getFullYear();
+
+            // 1. Weekends/Holidays (General Catch)
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                return 'WEEKEND';
+            }
+
+            // 2. Special Dates (2025-2026 Academic Year)
+            // Mon, Aug. 11, 2025 (First Day)
+            if (year === 2025 && month === 7 && day === 11) {
+                return 'FIRST_DAY';
+            }
+
+            // Senior Finals (Tues, May 19 & Wed, May 20, 2026)
+            // Note: The original schedule shows these days as using block day timings.
+            if (year === 2026 && month === 4) { // May is month 4
+                if (day === 19) return 'WEDNESDAY_BLOCK'; // Block 1, 3, 5 periods
+                if (day === 20) return 'THURSDAY_BLOCK';  // Block 2, 4, 6 periods
+            }
+            
+            // 3. Standard Weekly Schedule
+            if (dayOfWeek === 1) return 'MONDAY';
+            if (dayOfWeek === 2 || dayOfWeek === 5) return 'TUE_FRI'; // Tuesday and Friday
+            if (dayOfWeek === 3) return 'WEDNESDAY_BLOCK';
+            if (dayOfWeek === 4) return 'THURSDAY_BLOCK';
+
+            return 'NO_SCHOOL';
+        }
+        
+        // --- Render Functions ---
+
+        function renderScheduleList(scheduleKey, currentEventIndex) {
+            const schedule = SCHEDULES[scheduleKey];
+            const listContainer = document.getElementById('schedule-list');
+            listContainer.innerHTML = '';
+
+            if (!schedule) {
+                listContainer.innerHTML = `<p class="text-gray-500 italic">No scheduled events found for this day.</p>`;
+                return;
+            }
+
+            schedule.events.forEach((event, index) => {
+                const isCurrent = index === currentEventIndex;
+                const isUpcoming = index > currentEventIndex;
+                
+                let bgColor = '';
+                let textColor = 'text-gray-300';
+                let fontWeight = 'font-normal';
+                
+                if (isCurrent) {
+                    bgColor = 'bg-accent-teal/20 border-l-4 border-accent-teal';
+                    textColor = 'text-white font-semibold';
+                    fontWeight = 'font-bold';
+                } else if (isUpcoming) {
+                    bgColor = 'bg-gray-700/30';
+                } else {
+                    // Past periods
+                    bgColor = 'bg-gray-900/50';
+                    textColor = 'text-gray-500 line-through';
+                }
+                
+                if (event.type === 'lunch') {
+                    textColor = isCurrent ? 'text-yellow-300' : 'text-yellow-500';
+                } else if (event.type === 'break') {
+                    textColor = isCurrent ? 'text-primary-indigo' : 'text-primary-indigo/70';
+                    fontWeight = isCurrent ? 'font-medium' : 'font-normal';
+                }
+
+                const optionalMarker = event.optional ? '<span class="text-xs text-gray-500 ml-2">(Optional)</span>' : '';
+
+                listContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-3 rounded-lg ${bgColor} transition duration-200">
+                        <div class="${textColor} ${fontWeight}">
+                            ${event.name} ${optionalMarker}
+                        </div>
+                        <div class="text-sm ${textColor}">
+                            ${event.start} - ${event.end}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // Renders a simple 7-day calendar view
+        function renderCalendarGlance(today) {
+            const calendarContainer = document.getElementById('calendar-glance');
+            calendarContainer.innerHTML = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                // Adjust for tester mode, where we don't want to advance time itself, but days.
+                date.setDate(today.getDate() + i);
+                
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateNum = date.getDate();
+                
+                const scheduleTypeKey = getScheduleType(date);
+                let typeName = '';
+                let typeColor = 'text-gray-400';
+                let bgColor = 'bg-gray-800/50';
+                
+                if (scheduleTypeKey in SCHEDULES) {
+                    typeName = SCHEDULES[scheduleTypeKey].name.split(' ')[0];
+                    typeColor = 'text-accent-teal';
+                } else if (scheduleTypeKey === 'WEEKEND') {
+                    typeName = 'Weekend';
+                    typeColor = 'text-red-400';
+                } else {
+                    typeName = 'No School';
+                    typeColor = 'text-yellow-400';
+                }
+
+                if (i === 0) {
+                    bgColor = 'bg-primary-indigo/30 border border-primary-indigo';
+                    typeColor = 'text-white';
+                }
+
+                calendarContainer.innerHTML += `
+                    <div class="flex flex-col items-center justify-center p-3 rounded-lg ${bgColor} transition duration-200">
+                        <div class="text-xs text-gray-400">${dayName}</div>
+                        <div class="text-xl font-bold text-white">${dateNum}</div>
+                        <div class="text-xs ${typeColor} text-center truncate">${typeName}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- Main Update Function ---
+
+        function updateClock() {
+            // Use custom time if tester mode is active, otherwise use real time
+            const now = testerModeActive && customNow ? customNow : new Date();
+            // If in tester mode, we don't automatically advance the time, so no need to call updateClock repeatedly
+            const nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+            const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+            let timeDisplayContent = `Current Time: ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+            
+            if (testerModeActive) {
+                timeDisplayContent = `<span class="text-yellow-400 font-bold">[SIMULATING]</span> ${timeDisplayContent}`;
+            }
+
+            document.getElementById('current-time-display').innerHTML = timeDisplayContent;
+
+            const scheduleKey = getScheduleType(now);
+            document.getElementById('schedule-type-display').textContent = SCHEDULES[scheduleKey] ? SCHEDULES[scheduleKey].name : scheduleKey.replace(/_/g, ' ');
+            
+            const periodNameEl = document.getElementById('current-period-name');
+            const periodInfoEl = document.getElementById('period-info');
+            const timeRemainingEl = document.getElementById('time-remaining');
+            const progressBarEl = document.getElementById('progress-bar');
+            
+            if (scheduleKey === 'WEEKEND' || scheduleKey === 'NO_SCHOOL') {
+                periodNameEl.textContent = scheduleKey === 'WEEKEND' ? "Enjoy Your Weekend!" : "No School Today!";
+                periodInfoEl.textContent = "School is not in session. Check the calendar below for upcoming schedules.";
+                timeRemainingEl.textContent = "";
+                progressBarEl.style.width = '100%';
+                progressBarEl.className = 'bg-green-500 h-3 rounded-full transition-all duration-100 ease-linear';
+                renderScheduleList(null, -1);
+                renderCalendarGlance(now);
+                return;
+            }
+
+            const schedule = SCHEDULES[scheduleKey].events;
+            let currentEvent = null;
+            let currentEventIndex = -1;
+            let foundEvent = false;
+
+            // 1. Find the current/next event
+            for (let i = 0; i < schedule.length; i++) {
+                const event = schedule[i];
+                const startMinutes = timeToMinutes(event.start);
+                const endMinutes = timeToMinutes(event.end);
+
+                if (nowMinutes >= startMinutes && nowMinutes < endMinutes) {
+                    currentEvent = event;
+                    currentEventIndex = i;
+                    foundEvent = true;
+                    break;
+                }
+            }
+
+            // 2. Update UI based on current state
+            if (foundEvent) {
+                const startMinutes = timeToMinutes(currentEvent.start);
+                const endMinutes = timeToMinutes(currentEvent.end);
+                
+                const totalDuration = endMinutes - startMinutes;
+                const elapsedDuration = nowMinutes - startMinutes;
+                const remainingDuration = endMinutes - nowMinutes;
+
+                const progress = Math.min(100, (elapsedDuration / totalDuration) * 100);
+                
+                periodNameEl.textContent = currentEvent.name;
+                periodInfoEl.textContent = `Ends at ${currentEvent.end}`;
+                timeRemainingEl.textContent = `${formatMinutesToDuration(remainingDuration)} remaining`;
+                progressBarEl.style.width = `${progress}%`;
+                progressBarEl.className = 'bg-accent-teal h-3 rounded-full transition-all duration-100 ease-linear';
+            
+            } else {
+                // Not in an active event (Before school or after school)
+                let nextEvent = null;
+
+                // Check for upcoming event
+                for (let i = 0; i < schedule.length; i++) {
+                    if (nowMinutes < timeToMinutes(schedule[i].start)) {
+                        nextEvent = schedule[i];
+                        break;
+                    }
+                }
+
+                if (nextEvent) {
+                    const startMinutes = timeToMinutes(nextEvent.start);
+                    const timeUntilStart = startMinutes - nowMinutes;
+
+                    periodNameEl.textContent = `Up Next: ${nextEvent.name}`;
+                    periodInfoEl.textContent = `Starts at ${nextEvent.start}`;
+                    timeRemainingEl.textContent = `Starts in ${formatMinutesToDuration(timeUntilStart)}`;
+                    progressBarEl.style.width = '0%';
+                    progressBarEl.className = 'bg-primary-indigo h-3 rounded-full transition-all duration-100 ease-linear';
+
+                    // Find index of the next event
+                    currentEventIndex = schedule.indexOf(nextEvent) - 1;
+                } else {
+                    // School day is over (after last period)
+                    periodNameEl.textContent = "School Day Complete!";
+                    periodInfoEl.textContent = "No more scheduled events for today. See you tomorrow!";
+                    timeRemainingEl.textContent = "";
+                    progressBarEl.style.width = '100%';
+                    progressBarEl.className = 'bg-green-500 h-3 rounded-full transition-all duration-100 ease-linear';
+                }
+            }
+
+            // 3. Render the schedule list and calendar
+            renderScheduleList(scheduleKey, currentEventIndex);
+            renderCalendarGlance(now);
+        }
+        
+        // --- Tester Mode Logic ---
+
+        function handleTesterClick() {
+            // Reset timer on every click
+            clearTimeout(clickTimer);
+            clickCount++;
+
+            if (clickCount >= requiredClicks) {
+                activateTesterMode();
+                clickCount = 0; // Reset counter after activation
+                return;
+            }
+
+            // Start a new timer
+            clickTimer = setTimeout(() => {
+                clickCount = 0; // Reset count if clicks are too slow
+            }, clickTimeout);
+        }
+
+        function activateTesterMode() {
+            testerModeActive = true;
+            document.getElementById('tester-modal').classList.remove('hidden');
+            document.getElementById('tester-hint').classList.add('opacity-100');
+            // Populate inputs with current date/time for initial setup
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().split(' ')[0];
+            document.getElementById('test-date').value = dateStr;
+            document.getElementById('test-time').value = timeStr.substring(0, 8); // Include seconds
+
+            // Stop the regular update interval when tester mode is active
+            clearInterval(updateInterval);
+            updateClock();
+        }
+
+        function deactivateTesterMode() {
+            testerModeActive = false;
+            customNow = null;
+            document.getElementById('tester-modal').classList.add('hidden');
+            document.getElementById('tester-hint').classList.remove('opacity-100');
+            // Restart the regular update interval
+            updateInterval = setInterval(updateClock, 1000);
+            updateClock();
+        }
+
+        // Event listeners for tester form
+        document.getElementById('tester-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dateInput = document.getElementById('test-date').value;
+            const timeInput = document.getElementById('test-time').value;
+            
+            // Combine date and time to create a custom Date object
+            customNow = new Date(`${dateInput}T${timeInput}`);
+            
+            if (isNaN(customNow.getTime())) {
+                console.error("Invalid date or time input.");
+                return;
+            }
+
+            // Close modal, but keep testerModeActive=true
+            document.getElementById('tester-modal').classList.add('hidden');
+            updateClock(); // Redraw the display with the new simulated time
+        });
+
+        document.getElementById('reset-button').addEventListener('click', deactivateTesterMode);
+        document.getElementById('tester-modal').addEventListener('click', (e) => {
+            // Close modal if clicking outside the content
+            if (e.target.id === 'tester-modal') {
+                document.getElementById('tester-modal').classList.add('hidden');
+            }
+        });
+
+        // --- Initialization ---
+        let updateInterval;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Set up the click handler on the progress bar container
+            document.getElementById('progress-bar-container').addEventListener('click', handleTesterClick);
+
+            // 2. Start the regular clock update
+            updateClock();
+            updateInterval = setInterval(updateClock, 1000);
+        });
+
+    </script>
+</body>
+</html>

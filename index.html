@@ -6,1003 +6,109 @@
     <title>x-Lunar's Projects</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- p5.js import removed from here to prevent duplicate warning -->
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!--
-    ====================================================================
-    ====================================================================
-
-        FILE: style.css
-
-        This <style> block contains all the CSS for the page.
-        You can copy and paste this content into a 'style.css' file
-        and link it in the <head> with: <link rel="stylesheet" href="style.css">
-
-    ====================================================================
-    ====================================================================
-    -->
     <style>
-        :root {
-            --selection-bg: #0078d4;
-            --selection-text: #FFFFFF;
-        }
-
-        body {
+        /* Custom styles for a cleaner font and full-height dark background */
+        html {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
-            /* Prevent body scroll during transitions */
-            overflow-x: hidden;
         }
-        .card {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
+        body {
+            background-color: #0d1117; /* GitHub Dark background color */
+            color: #c9d1d9; /* Light gray text for contrast */
+            min-height: 100vh;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-        }
-        .nav-button {
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, color 0.2s;
-        }
-        .nav-button:hover {
-            transform: translateY(-1px);
-        }
-        
-        /* Content view transition styles */
-        .content-view {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, max-height 0.4s ease-in-out;
-            transform: translateY(10px);
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            visibility: hidden; /* Use visibility to prevent interaction when hidden */
-        }
-        .content-view.active {
-            transform: translateY(0);
-            opacity: 1;
-            max-height: 5000px; /* Large value to accommodate content */
-            visibility: visible;
-        }
-
-        /* Editor Styles */
-        .code-editor-container {
-            position: relative;
-            /* Make it grow to fill the left column */
-            height: 100%;
-            min-height: 600px;
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            border: 1px solid #374151; /* gray-700 */
-            border-radius: 0.5rem;
-            background-color: #1f2937; /* gray-800 */
-            color: #d1d5db; /* gray-300 */
-            overflow: hidden;
-        }
-
-        .code-editor-container textarea,
-        .code-editor-container pre {
-            margin: 0;
-            padding: 1rem;
-            white-space: pre-wrap; /* Allow wrapping */
-            word-wrap: break-word; /* Break long words */
-            overflow: auto;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box; /* Ensure padding doesn't break layout */
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .code-editor-container textarea {
-            z-index: 10;
-            background: transparent;
-            color: transparent; /* Text is transparent */
-            caret-color: white;
-            border: none;
+        /* Custom focus ring color for accessibility */
+        .focus-indigo:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
             outline: none;
-            resize: none;
-            -webkit-text-fill-color: transparent; /* For Safari */
-        }
-
-        /* --- HIGHLIGHTING FIX --- */
-        /* 1. Style the textarea's selection to ONLY show the background color */
-        .code-editor-container textarea::selection {
-            background: var(--selection-bg);
-            color: transparent; /* Keep text transparent */
-            -webkit-text-fill-color: transparent; /* Keep text transparent */
-        }
-
-        /* 2. Style the underlying 'pre' block's selection */
-        .code-editor-container pre::selection {
-            background: var(--selection-bg); /* This won't be seen, but good practice */
-            color: var(--selection-text); /* Force base text to white */
-        }
-        
-        /* 3. Force all child tokens (spans) to be white during selection */
-        .code-editor-container pre::selection * {
-            color: var(--selection-text) !important; 
-        }
-        /* --- END HIGHLIGHTING FIX --- */
-
-
-        .code-editor-container pre {
-            z-index: 5;
-            pointer-events: none; /* Allows clicks to go to textarea */
-        }
-        
-        /* Syntax Highlighting Colors (CodeHS-inspired) */
-        .token-keyword { color: #569cd6; } /* Blue for if, function, etc. */
-        .token-string { color: #ce9178; } /* Orange for strings */
-        .token-number { color: #b5cea8; } /* Light green for numbers */
-        .token-comment { color: #6a9955; } /* Darker green for comments */
-        .token-variable { color: #9cdcfe; } /* Light blue for p5, Math */
-        .token-function { color: #dcdcaa; } /* Yellow for function names */
-        .token-default { color: #d1d5db; } /* Default text color */
-
-        /* Console Output */
-        #console-output {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: 'Fira Code', monospace;
-            font-size: 13px;
-            padding: 1rem;
-            height: 250px; /* Fixed height for the console */
-            overflow-y: auto;
-            border-radius: 0 0 0.5rem 0.5rem;
-            border: 1px solid #333;
-            border-top: none;
-        }
-        #console-output .log-entry {
-            border-bottom: 1px solid #333;
-            padding: 4px 0;
-            white-space: pre-wrap; /* Allow console logs to wrap */
-            word-break: break-all; /* Break long strings */
-        }
-        #console-output .log-error {
-            color: #f472b6; /* Pink-500 */
-        }
-        #console-output .log-warn {
-            color: #facc15; /* Yellow-400 */
-        }
-
-        /* AI Modal */
-        .modal {
-            transition: opacity 0.2s ease-in-out, visibility 0.2s;
-        }
-        .modal-content {
-            transition: transform 0.2s ease-in-out;
-        }
-
-        /* Simple loading spinner */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #4f46e5; /* indigo-600 */
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-indigo': '#6366f1',
+                        'secondary-gray': '#1f2937',
+                        // Added accent color for the new button
+                        'accent-teal': '#14b8a6', 
+                    },
+                }
+            }
+        }
+    </script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="flex flex-col items-center justify-between p-4 sm:p-8">
 
-    <!--
-    ====================================================================
-    ====================================================================
+    <!-- Main Container -->
+    <main class="w-full max-w-6xl flex-grow flex flex-col items-center justify-center">
 
-        FILE: index.html (BODY)
-
-        This is the main HTML content for the page.
-
-    ====================================================================
-    ====================================================================
-    -->
-    <div class="w-full max-w-7xl mx-auto space-y-12"> <!-- Increased max-width for editor -->
-
-        <!-- Header -->
-        <header class="text-center space-y-4">
-            <h1 class="text-5xl font-extrabold text-gray-900 tracking-tight">
+        <!-- Header and Title -->
+        <header class="text-center mb-12 p-4">
+            <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-2">
                 x-Lunar's Projects
             </h1>
-            <p class="text-xl text-indigo-600 font-medium">
-                All the stuff is here
+            <p class="text-xl sm:text-2xl font-light text-primary-indigo">
+                Ts is my awesome website frfr
             </p>
         </header>
 
-        <!-- Main Content Area -->
-        <main id="content-area">
-            
-            <!-- View 1: About Me / Hub (Active by default) -->
-            <section id="about-view" class="content-view active">
-                <div class="card bg-white p-8 rounded-xl max-w-4xl mx-auto"> <!-- Keep original max-width for this view -->
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">👋 About Me</h2>
-                    <div class="text-gray-600 space-y-4">
-                        <p>
-                            Hello! This is obviously AI-generated, but that's all you're getting for now. enjoy some goofy projects I might make later.
-                        </p>
-                        <p>
-                            Take a look around—I hope you find something interesting!
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- View 2: p5.js Editor -->
-            <section id="editor-view" class="content-view">
-                <div class="card bg-white p-8 rounded-xl space-y-6">
-                    <h2 class="text-3xl font-bold text-gray-800">🎨 Creative Coding Sandbox</h2>
-                    
-                    <!-- New 2-Column Layout -->
-                    <div class="grid md:grid-cols-2 gap-6">
-                        
-                        <!-- Left Column: Editor -->
-                        <div class="flex flex-col space-y-4">
-                            <h3 class="text-xl font-semibold text-gray-700">Code Editor</h3>
-                            <div class="code-editor-container flex-grow">
-                                <textarea 
-                                    id="code-input" 
-                                    spellcheck="false" 
-                                    autocapitalize="off" 
-                                    autocorrect="off"
-                                    aria-label="Code Editor"
-                                ></textarea>
-                                <pre id="highlight-container" aria-hidden="true"><code id="highlight-output"></code></pre>
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Controls, Output, Console -->
-                        <div class="flex flex-col space-y-4">
-                            
-                            <!-- Controls -->
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <button id="run-button" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition duration-200">
-                                    ▶ Run Code
-                                </button>
-                                <button id="ai-button" class="flex-1 bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-gray-800 transition duration-200">
-                                    🤖 Ask AI
-                                </button>
-                            </div>
-
-                            <!-- Output Frame -->
-                            <div class="flex-grow flex flex-col">
-                                <h3 class="text-lg font-semibold text-gray-700 p-4 bg-gray-200 border-t border-l border-r border-gray-300 rounded-t-lg">Output</h3>
-                                <iframe 
-                                    id="p5-canvas" 
-                                    title="p5.js Output" 
-                                    class="w-full h-96 flex-grow border-l border-r border-b border-gray-300 rounded-b-lg"
-                                    sandbox="allow-scripts allow-same-origin" <!-- allow-same-origin is needed for postMessage -->
-                                ></iframe>
-                            </div>
-
-                            <!-- Console Output -->
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-700 p-4 bg-gray-200 border border-gray-300 rounded-t-lg border-b-0">Console</h3>
-                                <div id="console-output">
-                                    <div class="log-entry text-gray-500">Console ready. Click "Run Code" to start.</div>
-                                V</div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- View 3: Download Portal -->
-            <section id="download-view" class="content-view">
-                <div class="card bg-white p-8 rounded-xl max-w-4xl mx-auto"> <!-- Keep original max-width for this view -->
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">⬇️ File Download Portal</h2>
-                    <div id="download-list" class="space-y-4">
-                        <!-- File items will be injected here by JS -->
-                    </div>
-                </div>
-            </section>
-
-        </main>
-
-        <!-- Navigation Buttons Section (Always Visible) -->
-        <section class="space-y-6 max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-gray-800 text-center">My Sites</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                <!-- Button 1: p5.js Editor -->
-                <button data-view="editor-view" class="nav-button card block bg-white border border-gray-200 rounded-xl p-6 text-center hover:bg-indigo-50">
-                    <div class="text-indigo-600 text-4xl mb-2">🎨</div>
-                    <h3 class="text-xl font-semibold text-gray-800">Creative Coding Sandbox</h3>
-                    <p class="text-sm text-gray-500 mt-1">Visit my interactive p5.js experiments.</p>
-                </button>
-
-                <!-- Button 2: Central Hub -->
-                <button data-view="about-view" class="nav-button card block bg-indigo-600 border border-indigo-700 rounded-xl p-6 text-center shadow-lg text-white">
-                    <div class="text-white text-4xl mb-2">🏠</div>
-                    <h3 class="text-xl font-semibold text-white">Hub</h3>
-                    <p class="text-sm text-indigo-200 mt-1">You are here: My main portfolio page.</p>
-                </button>
-
-                <!-- Button 3: Download Site -->
-                <button data-view="download-view" class="nav-button card block bg-white border border-gray-200 rounded-xl p-6 text-center hover:bg-indigo-50">
-                    <div class="text-indigo-600 text-4xl mb-2">⬇️</div>
-                    <h3 class="text-xl font-semibold text-gray-800">File Download Portal</h3>
-                    <p class="text-sm text-gray-500 mt-1">Get the latest file I'm sharing.</p>
-                </button>
-
-            </div>
-        </section>
-
-    </div>
-
-    <!-- AI Modal -->
-    <div id="ai-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 opacity-0 invisible z-50">
-        <div class="modal-content transform -translate-y-10 bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center p-5 border-b">
-                <h3 class="text-2xl font-bold text-gray-800">🤖 Ask AI</h3>
-                <button id="close-modal" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
-            </div>
-            
-            <!-- Modal Body -->
-            <div class="p-6 space-y-4 overflow-y-auto">
-                <div>
-                    <label for="ai-prompt" class="block text-sm font-medium text-gray-700 mb-1">Your Question:</label>
-                    <textarea id="ai-prompt" rows="3" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm" placeholder="e.g., Explain this code, or Find the bug"></textarea>
-                </div>
-                
-                <div class="flex flex-wrap gap-2">
-                    <button id="explain-code-btn" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200">Explain Code</button>
-                    <button id="fix-code-btn" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200">Fix Code</button>
-                    <button id="generate-code-btn" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200">Generate p5.js sketch</button>
-                </div>
-
-                <div id="ai-response-container" class="mt-4">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-2">AI Response:</h4>
-                    <div id="ai-loading" class="hidden items-center space-x-2 text-gray-600">
-                        <div class="spinner"></div>
-                        <span>Thinking...</span>
-                    </div>
-                    <!-- AI response will be rendered as rich text (prose) -->
-                    <div id="ai-response" class="prose prose-sm max-w-none bg-gray-50 p-4 rounded-md border border-gray-200 min-h-[100px] overflow-y-auto">
-                        Waiting for prompt...
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="p-4 bg-gray-50 border-t rounded-b-xl">
-                <button id="send-ai-request" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition duration-200">
-                    Send to AI
-                </button>
-            </div>
+        <!-- Description Box - Easily customizable section -->
+        <div class="w-full bg-gray-800/70 p-6 sm:p-8 rounded-xl shadow-2xl backdrop-blur-sm mb-12">
+            <h2 class="text-2xl font-semibold mb-3 text-white">About This Space</h2>
+            <p id="editable-description" class="text-gray-300 leading-relaxed">
+                Welcome! This is my 200% not AI website. I have some fun projects on here idk
+            </p>
         </div>
-    </div>
-    <!--
-    ====================================================================
-    ====================================================================
 
-        FILE: script.js
+        <!-- Button Section (Now with 3 buttons) -->
+        <!-- Using md:flex-row to ensure all three fit nicely on medium screens and up -->
+        <div class="flex flex-col md:flex-row gap-6 w-full justify-center">
 
-        This <script> block contains all the JavaScript for the page.
-        You can copy and paste this content into a 'script.js' file
-        and link it at the end of the <body> with:
-        <script type="module" src="script.js"></script>
+            <!-- p5.js Editor Button -->
+            <a href="p5editor.html" class="flex-1 w-full">
+                <button class="w-full flex items-center justify-center p-4 rounded-xl text-lg font-bold transition-all duration-300 bg-primary-indigo hover:bg-indigo-700 text-white shadow-lg shadow-primary-indigo/30 transform hover:scale-[1.03] focus-indigo">
+                    <!-- Icon: Code editor / Bracket -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    P5.JS CODE EDITOR
+                </button>
+            </a>
 
-    ====================================================================
-    ====================================================================
-    -->
-    <script type="module">
-        // --- Gemini API Key ---
-        // As per instructions, the API key is left empty.
-        // The runtime environment will provide the necessary credentials.
-        const GEMINI_API_KEY = "AIzaSyBYHPR6lVP6DDpFt0m_HKoksaAbzZ63_yQ";
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            <!-- School Timer Button (NEW) -->
+            <a href="schooltimer.html" class="flex-1 w-full">
+                <button class="w-full flex items-center justify-center p-4 rounded-xl text-lg font-bold transition-all duration-300 bg-accent-teal hover:bg-teal-700 text-white shadow-lg shadow-accent-teal/30 transform hover:scale-[1.03] focus-indigo">
+                    <!-- Icon: Clock -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    SCHOOL TIMER
+                </button>
+            </a>
 
-        // --- File Download Definitions ---
-        const downloadFiles = [
-            {
-                id: "AHKAutoType.ahk",
-                name: "AHKAutoType.ahk",
-                description: "An AutoHotkey script that automatically types pasted content.",
-                // Link directly to the file in the GitHub repo
-                url: "https://x-lunar.github.io/x-Lunar/AHKAutoType.ahk"
-            },
-            // You can easily add more files here!
-            // {
-            //     id: "another-file",
-            //     name: "example.txt",
-            //     description: "This is another example file.",
-            //     url: "https://x-lunar.github.io/x-Lunar/example.txt"
-            // }
-        ];
+            <!-- Downloads Page Button -->
+            <a href="downloads.html" class="flex-1 w-full">
+                <button class="w-full flex items-center justify-center p-4 rounded-xl text-lg font-bold transition-all duration-300 bg-gray-600 hover:bg-gray-700 text-white shadow-lg shadow-gray-600/30 transform hover:scale-[1.03] focus-indigo">
+                    <!-- Icon: Download -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    PRODUCT DOWNLOADS
+                </button>
+            </a>
 
-        // --- App Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initNavigation();
-            initEditor();
-            initDownloadPortal();
-            initAIModal();
-            initConsoleCatcher();
-            
-            // Set default editor text
-            const codeInput = document.getElementById('code-input');
-            
-            // --- CODE FIX: Replaced default code with your (cleaned) unit circle sketch ---
-            const defaultCode = `let circleX = 200;
-let circleY = 150;
-let circleRadius = 75;
+        </div>
+    </main>
 
-let graphX = 50;
-let graphY = 300;
-let graphAmplitude = 50;
-let graphPeriod = 300;
-
-function setup() {
-  createCanvas(400, 400);
-  angleMode(DEGREES);
-  describe(
-    'Animated demonstration of a point moving around the unit circle, together with the corresponding sine and cosine values moving along their graphs.'
-  );
-}
-
-function draw() {
-  background(0);
-
-  // Set angle based on frameCount, and display current value
-  let angle = frameCount % 360;
-
-  fill(255);
-  textSize(20);
-  textAlign(LEFT, CENTER);
-  text(\`angle: \${angle}\`, 25, 25);
-
-  // Draw circle and diameters
-  noFill();
-  stroke(128);
-  strokeWeight(3);
-  circle(circleX, circleY, 2 * circleRadius);
-  line(circleX, circleY - circleRadius, circleX, circleY + circleRadius);
-  line(circleX - circleRadius, circleY, circleX + circleRadius, circleY);
-
-  // Draw moving points
-  let pointX = circleX + circleRadius * cos(angle);
-  let pointY = circleY - circleRadius * sin(angle);
-
-  line(circleX, circleY, pointX, pointY);
-
-  noStroke();
-
-  fill('white');
-  circle(pointX, pointY, 10);
-
-  fill('orange');
-  circle(pointX, circleY, 10);
-
-  fill('red');
-  circle(circleX, pointY, 10);
-
-  // Draw graph
-  stroke('grey');
-  strokeWeight(3);
-  line(graphX, graphY, graphX + 300, graphY);
-  line(graphX, graphY - graphAmplitude, graphX, graphY + graphAmplitude);
-  line(
-    graphX + graphPeriod,
-    graphY - graphAmplitude,
-    graphX + graphPeriod,
-    graphY + graphAmplitude
-  );
-
-  fill('grey');
-  strokeWeight(1);
-  textAlign(CENTER, CENTER);
-  text('0', graphX, graphY + graphAmplitude + 20);
-  text('360', graphX + graphPeriod, graphY + graphAmplitude + 20);
-  text('1', graphX / 2, graphY - graphAmplitude);
-  text('0', graphX / 2, graphY);
-  text('-1', graphX / 2, graphY + graphAmplitude);
-
-  fill('orange');
-  text('cos', graphX + graphPeriod + graphX / 2, graphY - graphAmplitude);
-  fill('red');
-  text('sin', graphX + graphPeriod + graphX / 2, graphY);
-
-  // Draw cosine curve
-  noFill();
-  stroke('orange');
-  beginShape();
-  for (let t = 0; t <= 360; t++) {
-    let x = map(t, 0, 360, graphX, graphX + graphPeriod);
-    let y = graphY - graphAmplitude * cos(t);
-    vertex(x, y);
-  }
-  endShape();
-
-  // Draw sine curve
-  noFill();
-  stroke('red');
-  beginShape();
-  for (let t = 0; t <= 360; t++) {
-    let x = map(t, 0, 360, graphX, graphX + graphPeriod);
-    let y = graphY - graphAmplitude * sin(t);
-    vertex(x, y);
-  }
-  endShape();
-
-  // Draw moving line
-  let lineX = map(angle, 0, 360, graphX, graphX + graphPeriod);
-  stroke('grey');
-  line(lineX, graphY - graphAmplitude, lineX, graphY + graphAmplitude);
-
-  // Draw moving points on graph
-  let orangeY = graphY - graphAmplitude * cos(angle);
-  let redY = graphY - graphAmplitude * sin(angle);
-
-  noStroke();
-
-  fill('orange');
-  circle(lineX, orangeY, 10);
-
-  fill('red');
-  circle(lineX, redY, 10);
-}
-`;
-            codeInput.value = defaultCode;
-            highlightCode(defaultCode);
-        });
-
-        // --- 1. Navigation Logic ---
-        function initNavigation() {
-            const navButtons = document.querySelectorAll('.nav-button');
-            const contentArea = document.getElementById('content-area');
-            const views = contentArea.querySelectorAll('.content-view');
-
-            // Find the initially active button
-            let activeButton = document.querySelector('.nav-button[data-view="about-view"]');
-
-            navButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const viewId = button.dataset.view;
-                    
-                    // --- Show the correct view ---
-                    views.forEach(view => {
-                        if (view.id === viewId) {
-                            // Use setTimeout to allow 'hidden' to apply before adding 'active'
-                            setTimeout(() => view.classList.add('active'), 10);
-                        } else {
-                            view.classList.remove('active');
-                        }
-                    });
-
-                    // --- Update button styles (THE FIX) ---
-                    // 1. Remove active styles from the *previously* active button
-                    if (activeButton) {
-                        activeButton.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'border-indigo-700');
-                        activeButton.classList.add('bg-white', 'hover:bg-indigo-50', 'text-gray-800', 'border-gray-200');
-                        
-                        // Find and update text colors inside the button
-                        const h3 = activeButton.querySelector('h3');
-                        const p = activeButton.querySelector('p');
-                        if (h3) {
-                            h3.classList.remove('text-white');
-                            h3.classList.add('text-gray-800');
-                        }
-                        if (p) {
-                            p.classList.remove('text-indigo-200');
-                            p.classList.add('text-gray-500');
-                        }
-                    }
-                    
-                    // 2. Add active styles to the *clicked* button
-                    button.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'border-indigo-700');
-                    button.classList.remove('bg-white', 'hover:bg-indigo-50', 'text-gray-800', 'border-gray-200');
-                    
-                    // Find and update text colors inside the button
-                    const h3 = button.querySelector('h3');
-                    const p = button.querySelector('p');
-                    if (h3) {
-                        h3.classList.add('text-white');
-                        h3.classList.remove('text-gray-800');
-                    }
-                    if (p) {
-                        p.classList.add('text-indigo-200');
-                        p.classList.remove('text-gray-500');
-                    }
-
-                    // 3. Store the new active button
-                    activeButton = button;
-                });
-            });
-        }
-
-        // --- 2. Editor Logic ---
-        function initEditor() {
-            const codeInput = document.getElementById('code-input');
-            const highlightOutput = document.getElementById('highlight-output');
-            const preContainer = document.getElementById('highlight-container');
-
-            // Sync highlighting on input
-            codeInput.addEventListener('input', () => {
-                const code = codeInput.value;
-                highlightCode(code);
-            });
-
-            // Sync scrolling
-            codeInput.addEventListener('scroll', () => {
-                preContainer.scrollTop = codeInput.scrollTop;
-                preContainer.scrollLeft = codeInput.scrollLeft;
-            });
-            
-            // Handle Tab key
-            codeInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    const tab = "  "; // 2 spaces
-                    this.value = this.value.substring(0, start) + tab + this.value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + tab.length;
-                    highlightCode(this.value); // Re-highlight on tab
-                }
-            });
-
-            // Run Code Button
-            document.getElementById('run-button').addEventListener('click', () => {
-                const code = codeInput.value;
-                const iframe = document.getElementById('p5-canvas');
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-                // Clear console on new run
-                document.getElementById('console-output').innerHTML = '';
-
-                doc.open();
-                doc.write(`
-                    <html>
-                        <head>
-                            <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"><\/script>
-                            <style>
-                                body { margin: 0; overflow: hidden; font-family: sans-serif; }
-                                canvas { display: block; }
-                            </style>
-                        </head>
-                        <body>
-                            <script>
-                                // --- Console Capture Script ---
-                                (function() {
-                                    const parent = window.parent;
-                                    function postLog(type, args) {
-                                        try {
-                                            const serializableArgs = [...args].map(arg => {
-                                                if (arg instanceof Error) {
-                                                    return arg.toString();
-                                                }
-                                                if (typeof arg === 'object' && arg !== null) {
-                                                    try {
-                                                        return JSON.stringify(arg);
-                                                    } catch (e) {
-                                                        return arg.toString();
-                                                    }
-                                                }
-                                                if (typeof arg === 'undefined') {
-                                                    return 'undefined';
-                                                }
-                                                return arg;
-                                            });
-                                            parent.postMessage({
-                                                source: 'iframe-console',
-                                                type: type,
-                                                message: serializableArgs.join(' ')
-                                            }, '*');
-                                        } catch(e) {
-                                            // Fallback for complex objects
-                                            parent.postMessage({
-                                                source: 'iframe-console',
-                                                type: type,
-                                                message: 'Error serializing log message.'
-                                            }, '*');
-                                        }
-                                    }
-
-                                    const originalLog = console.log;
-                                    const originalError = console.error;
-                                    const originalWarn = console.warn;
-                                    const originalInfo = console.info;
-
-                                    console.log = function(...args) {
-                                        postLog('log', args);
-                                        originalLog.apply(console, args);
-                                    };
-                                    console.error = function(...args) {
-                                        postLog('error', args);
-                                        originalError.apply(console, args);
-                                    };
-                                    console.warn = function(...args) {
-                                        postLog('warn', args);
-                                        originalWarn.apply(console, args);
-                                    };
-                                    console.info = function(...args) {
-                                        postLog('info', args);
-                                        originalInfo.apply(console, args);
-                                    };
-                                    
-                                    window.addEventListener('error', function(e) {
-                                        // Calculate approximate line number
-                                        const lineOffset = 22; // Number of lines before user code starts
-                                        const errorLine = e.lineno > lineOffset ? e.lineno - lineOffset : e.lineno;
-                                        postLog('error', [e.message + ' (at line ' + errorLine + ')']);
-                                        return false; // Prevent default browser error handling
-                                    });
-                                }());
-                                // --- End Console Capture ---
-
-                                // --- User Code ---
-                                try {
-                                    ${code}
-                                } catch (err) {
-                                    console.error(err.toString());
-                                }
-                                // --- End User Code ---
-                            <\/script>
-                        </body>
-                    </html>
-                `);
-                doc.close();
-            });
-        }
-        
-        // Simple Syntax Highlighter
-        function highlightCode(code) {
-            const highlightOutput = document.getElementById('highlight-output');
-            // Basic regex for keywords
-            const keywords = /\b(function|if|else|for|let|const|var|new|return|while|true|false|this)\b/g;
-            const p5Keywords = /\b(p5|Math|createCanvas|background|fill|stroke|ellipse|rect|line|point|mouseX|mouseY|width|height|mouseIsPressed|keyIsPressed|keyCode|setup|draw|windowWidth|windowHeight|random|map|abs|cos|sin|tan|color|text|textSize|textAlign|CENTER|LEFT|RIGHT|UP_ARROW|DOWN_ARROW|LEFT_ARROW|RIGHT_ARROW|DEGREES|describe|angleMode|strokeWeight|noFill|noStroke|beginShape|endShape|vertex|frameCount)\b/g;
-            const strings = /(".*?"|'.*?'|`.*?`)/g;
-            const numbers = /\b-?\d+(\.\d+)?\b/g;
-            const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm;
-            const functionNames = /\b(\w+)\s*(?=\()/g;
-
-            let html = code
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Escape HTML
-
-            // Apply syntax highlighting
-            // Order matters: comments first, then strings, then keywords
-            html = html.replace(comments, '<span class="token-comment">$1</span>');
-            html = html.replace(strings, '<span class="token-string">$1</span>');
-            html = html.replace(keywords, '<span class="token-keyword">$1</span>');
-            html = html.replace(p5Keywords, '<span class="token-variable">$1</span>');
-            
-            // This regex is tricky. Let's try to not color keywords as functions
-            const keywordTest = /^(function|if|else|for|while|return)$/;
-            html = html.replace(functionNames, (match, name) => {
-                if (keywordTest.test(name)) {
-                    return match; // It's a keyword, not a function call
-                }
-                return `<span class="token-function">${name}</span>(`;
-            });
-            
-            html = html.replace(numbers, '<span class="token-number">$1</span>');
-            
-            // Add a trailing newline to prevent layout shift
-            highlightOutput.innerHTML = html + '\n';
-        }
-
-        // --- 3. Download Portal Logic ---
-        function initDownloadPortal() {
-            const downloadList = document.getElementById('download-list');
-            if (downloadFiles.length === 0) {
-                downloadList.innerHTML = '<p class="text-gray-500">No files available for download right now.</p>';
-                return;
-            }
-
-            downloadFiles.forEach(file => {
-                const fileElement = document.createElement('div');
-                fileElement.className = 'flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg';
-                
-                // Create an anchor tag for a direct download
-                fileElement.innerHTML = `
-                    <div class="mb-4 sm:mb-0">
-                        <h4 class="text-lg font-semibold text-indigo-700">${file.name}</h4>
-                        <p class="text-sm text-gray-600">${file.description}</p>
-                    </div>
-                    <a 
-                        href="${file.url}" 
-                        download="${file.name}"
-                        class="download-btn w-full sm:w-auto flex-shrink-0 bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm hover:bg-indigo-700 transition duration-200 text-center"
-                    >
-                        Download
-                    </a>
-                `;
-                downloadList.appendChild(fileElement);
-            });
-        }
-        
-        // --- 4. Console Catcher Logic ---
-        function initConsoleCatcher() {
-            const consoleOutput = document.getElementById('console-output');
-            window.addEventListener('message', (event) => {
-                // Check if the message is from our iframe
-                if (event.data && event.data.source === 'iframe-console') {
-                    const logEntry = document.createElement('div');
-                    logEntry.className = 'log-entry';
-                    
-                    // Add class based on log type
-                    if (event.data.type === 'error') {
-                        logEntry.classList.add('log-error');
-                    } else if (event.data.type === 'warn') {
-                        logEntry.classList.add('log-warn');
-                    }
-                    
-                    // Sanitize text content to prevent HTML injection
-                    logEntry.textContent = `[${event.data.type}] ${event.data.message}`;
-                    
-                    consoleOutput.appendChild(logEntry);
-                    // Auto-scroll to bottom
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                }
-            });
-        }
-
-
-        // --- 5. AI Modal Logic ---
-        function initAIModal() {
-            const modal = document.getElementById('ai-modal');
-            const openButton = document.getElementById('ai-button');
-            const closeButton = document.getElementById('close-modal');
-            const sendButton = document.getElementById('send-ai-request');
-            const aiPrompt = document.getElementById('ai-prompt');
-
-            const showModal = () => {
-                modal.classList.remove('invisible', 'opacity-0');
-                modal.querySelector('.modal-content').classList.remove('-translate-y-10');
-            };
-            const hideModal = () => {
-                modal.classList.add('invisible', 'opacity-0');
-                modal.querySelector('.modal-content').classList.add('-translate-y-10');
-            };
-
-            openButton.addEventListener('click', showModal);
-            closeButton.addEventListener('click', hideModal);
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) hideModal(); // Close on backdrop click
-            });
-
-            // Prompt helper buttons
-            document.getElementById('explain-code-btn').addEventListener('click', () => {
-                aiPrompt.value = "Please explain what this code does, step by step.";
-                aiPrompt.focus();
-            });
-            document.getElementById('fix-code-btn').addEventListener('click', () => {
-                aiPrompt.value = "Find any bugs or errors in this code and provide the corrected version. Only output the corrected code block inside a markdown block.";
-                aiPrompt.focus();
-            });
-            document.getElementById('generate-code-btn').addEventListener('click', () => {
-                aiPrompt.value = "Generate a simple p5.js sketch that draws a bouncing ball. Only output the code block inside a markdown block.";
-                aiPrompt.focus();
-            });
-
-            // Send request to AI
-            sendButton.addEventListener('click', callGeminiAPI);
-        }
-        
-        // Exponential backoff for retries
-        async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) {
-                    if (response.status === 429 && retries > 0) {
-                        // Don't log to console, just retry silently
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        return fetchWithBackoff(url, options, retries - 1, delay * 2);
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            } catch (error) {
-                if (retries > 0) {
-                    // Don't log to console, just retry silently
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchWithBackoff(url, options, retries - 1, delay * 2);
-                }
-                // Final attempt failed
-                console.error("Fetch failed after retries:", error);
-                throw error;
-            }
-        }
-
-        async function callGeminiAPI() {
-            const code = document.getElementById('code-input').value;
-            const userPrompt = document.getElementById('ai-prompt').value;
-            const responseDiv = document.getElementById('ai-response');
-            const loadingDiv = document.getElementById('ai-loading');
-            const sendButton = document.getElementById('send-ai-request');
-            
-            if (!userPrompt) {
-                responseDiv.textContent = "Please enter a prompt.";
-                return;
-            }
-
-            loadingDiv.classList.remove('hidden');
-            loadingDiv.classList.add('flex');
-            responseDiv.innerHTML = "Waiting for prompt..."; // Clear previous response
-            sendButton.disabled = true;
-            sendButton.textContent = "Thinking...";
-
-            const fullPrompt = `
-Context: I am working with p5.js and JavaScript in a code editor.
-
-My Code:
-\`\`\`javascript
-${code}
-\`\`\`
-
-My Question:
-${userPrompt}
-
-Please provide a helpful response. If you are providing code, wrap it in a markdown block (\`\`\`javascript ... \`\`\`).
-            `;
-
-            const payload = {
-                contents: [{ parts: [{ text: fullPrompt }] }]
-                // Note: No systemInstruction or tools are needed for this simple use case
-            };
-
-            try {
-                const result = await fetchWithBackoff(GEMINI_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                    // Simple markdown-to-HTML
-                    // 1. Sanitize basic HTML tags
-                    let html = text
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;');
-                    
-                    // 2. Format code blocks
-                    html = html.replace(/```javascript\n([\s\S]*?)\n```/g, 
-                        '<pre class="bg-gray-800 text-white p-3 rounded-md overflow-x-auto"><code>$1</code></pre>');
-                    html = html.replace(/```([\s\S]*?)```/g, 
-                        '<pre class="bg-gray-200 text-gray-800 p-3 rounded-md overflow-x-auto"><code>$1</code></pre>');
-                    
-                    // 3. Format inline code
-                    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded-sm">$1</code>');
-                    
-                    // 4. Format bold text
-                    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    
-                    // 5. Format newlines
-                    html = html.replace(/\n/g, '<br>');
-
-                    responseDiv.innerHTML = html;
-                } else {
-                    responseDiv.textContent = "Error: Could not get a response from the AI. The response might be empty or blocked.";
-                }
-
-            } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                responseDiv.textContent = `An error occurred: ${error.message}. Check the console for details.`;
-            } finally {
-                loadingDiv.classList.add('hidden');
-                loadingDiv.classList.remove('flex');
-                sendButton.disabled = false;
-                sendButton.textContent = "Send to AI";
-            }
-        }
-
-    </script>
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-gray-500 text-sm">
+        <p>&copy; 2025 x-Lunar. Built for GitHub Pages.</p>
+        <p class="mt-1">Source available on <a href="https://github.com/x-Lunar/x-Lunar" class="text-primary-indigo hover:text-indigo-400 transition">GitHub</a>.</p>
+    </footer>
 
 </body>
-
 </html>
